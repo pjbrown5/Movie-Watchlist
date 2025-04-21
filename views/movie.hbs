@@ -1,0 +1,30 @@
+<h1>{{title}}</h1>
+
+<div class="movie-item">
+    {{#if movie.poster_path}}
+        <img src="https://image.tmdb.org/t/p/w185{{movie.poster_path}}" alt="{{movie.title}} poster" class="movie-poster" />
+    {{/if}}
+    <div class="movie-details">
+        <p><strong>{{movie.title}} ({{movie.year}})</strong></p>
+        {{#if movie.overview}}
+            <p>{{movie.overview}}</p>
+        {{/if}}
+        <p>Status: {{movie.watched ? "Watched" : "Not Watched"}}</p>
+        {{#if movie.rating}}
+            <p>⭐ Rated: {{movie.rating}}/5</p>
+            <p>Review: {{movie.review}}</p>
+        {{else}}
+            <form onsubmit="submitRating('{{movie.id}}'); return false;">
+                <input type="number" min="1" max="5" id="rating-{{movie.id}}" placeholder="Rate (1-5)" required />
+                <textarea id="review-{{movie.id}}" placeholder="Leave a review"></textarea>
+                <button type="submit">Submit Review</button>
+            </form>
+        {{/if}}
+        {{#unless movie.watched}}
+            <button onclick="markWatched('{{movie.id}}')">Mark as Watched</button>
+        {{/unless}}
+        <button onclick="deleteMovie({{movie.id}})">Remove</button>
+    </div>
+</div>
+
+<script src="/app.js"></script>
