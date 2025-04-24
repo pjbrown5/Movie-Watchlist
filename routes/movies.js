@@ -29,16 +29,16 @@ const writeMovies = (movies) => {
 
 router.get("/search", async (req, res) => {
     const query = req.query.q;
-    if(!query){
+    if (!query) {
         return res.status(400).json({ error: "Search query is required" });
     }
 
-    try { 
+    try {
         const response = await fetch(
             `https://api.themoviedb.org/3/search/movie?api_key=${process.env.TMDB_API_KEY}&query=${encodeURIComponent(query)}`
         );
         const data = await response.json();
-        if(data.results) { 
+        if (data.results) {
             res.json(data.results.map(movie => ({
                 tmdb_id: movie.id,
                 title: movie.title,
@@ -53,6 +53,35 @@ router.get("/search", async (req, res) => {
         console.error("Error searching TMDb:", error);
         res.status(500).json({ error: "Failed to search movies" });
     }
+});
+
+router.get("/:id", async (req, res) => {
+    let movies = readMovies();
+    const movieId = parseInt(req.params.id);
+    const movie = movies.find(m => m.id === movieId);
+    if (!movie) {
+        return res.status(404).render("404", { message: "Movie not found", isMovieActive: true });
+    }
+
+    try {
+        const response = await fetch(
+            `https://api.themoviedb.org/3/movie/${movie.tmdb_id}?api_key=${process.env.TMDB_API_KEY}&append_to_response=credits`
+        );
+        const tmdbData = await response.json();
+        console.log("TMDB Data for movie", movie.tmdb_id, ":", tmdbData);
+
+        movie.director = tmdbData.credits?.crew?.find(member => member.job === "Director")?.name || "Unknown";
+        movie.cast = tmdbData.credits?.cast?.slice(0, 3).map(actor => actor.name).join(", ") || "Unknown";
+        movie.runtime = tmdbData.runtime ? `${tmdbData.runtime} minutes` : "Unknown";
+    } catch (error) {
+        console.error("Error fetching TMDB details for movie ID", movie.tmdb_id, ":", error);
+        movie.director = "Unknown";
+        movie.cast = "Unknown";
+        movie.runtime = "Unknown";
+    }
+
+    console.log("Movie data for rendering:", movie);
+    res.render("movie", { title: movie.title, movie, isMovieActive: true });
 });
 
 
@@ -119,9 +148,37 @@ router.put("/:id/watched", (req, res) => {
         return res.status(404).json({ error: "Movie not found" });
     }
 
-    movie.watched = true;
+    movie.watched = req.body.watched !== undefined ? req.body.watched : true;
     writeMovies(movies);
-    res.json({ message: "Movie marked as watched", movie });
+    res.json({ message: "Movie watched status updated", movie });
+});
+
+router.put("/:id/liked", (req, res) => {
+    const movieId = parseInt(req.params.id);
+    let movies = readMovies();
+
+    const movie = movies.find(m => m.id === movieId);
+    if (!movie) {
+        return res.status(404).json({ error: "Movie not found" });
+    }
+
+    movie.liked = req.body.liked !== undefined ? req.body.liked : true;
+    writeMovies(movies);
+    res.json({ message: "Movie liked status updated", movie });
+});
+
+router.put("/:id/watchlist", (req, res) => {
+    const movieId = parseInt(req.params.id);
+    let movies = readMovies();
+
+    const movie = movies.find(m => m.id === movieId);
+    if (!movie) {
+        return res.status(404).json({ error: "Movie not found" });
+    }
+
+    movie.watchlist = req.body.watchlist !== undefined ? req.body.watchlist : true;
+    writeMovies(movies);
+    res.json({ message: "Movie watchlist status updated", movie });
 });
 
 // Submit rating and review

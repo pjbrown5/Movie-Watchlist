@@ -8,11 +8,11 @@
 </head>
 <body>
     <nav>
-<nav>
-    <a href="/">Home</a>
-    <a href="/watched">Watched</a>
-    {{#if movie}}<a href="/movies/{{movie.id}}">Movie Details</a>{{/if}}
-</nav>
+        <a href="/" class="{{#if isHomeActive}}active{{/if}}">Home</a>
+        <a href="/watched" class="{{#if isWatchedActive}}active{{/if}}">Watched</a>
+        {{#if movie}}
+        <a href="/movies/{{movie.id}}" class="{{#if isMovieActive}}active{{/if}}">Movie Details</a>
+        {{/if}}
     </nav>
 
     <main>
